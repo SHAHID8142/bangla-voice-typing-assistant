@@ -1,0 +1,45 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Base App Background (Gradient) -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg-gradient)" />
+  
+  <!-- Outer Glow / Ring -->
+  <circle cx="512" cy="460" r="280" fill="url(#glow)" opacity="0.4" />
+
+  <!-- Microphone Head -->
+  <rect x="420" y="240" width="184" height="320" rx="92" fill="white" />
+  
+  <!-- Microphone Inner Detail -->
+  <rect x="450" y="270" width="124" height="260" rx="62" fill="url(#mic-inner)" opacity="0.9" />
+
+  <!-- Microphone Stand/Body -->
+  <path d="M320 480V520C320 616 394 695 488 703V800H400V860H624V800H536V703C630 695 704 616 704 520V480H644V520C644 592 585 650 512 650C439 650 380 592 380 520V480H320Z" fill="white" />
+
+  <!-- Sound Waves Left -->
+  <rect x="220" y="440" width="24" height="80" rx="12" fill="white" opacity="0.6" />
+  <rect x="270" y="400" width="24" height="160" rx="12" fill="white" opacity="0.8" />
+
+  <!-- Sound Waves Right -->
+  <rect x="730" y="400" width="24" height="160" rx="12" fill="white" opacity="0.8" />
+  <rect x="780" y="440" width="24" height="80" rx="12" fill="white" opacity="0.6" />
+
+  <!-- Define Gradients -->
+  <defs>
+    <!-- Background Blue-to-Purple (matching Tailwind blue-600 to purple-600) -->
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB" />
+      <stop offset="1" stop-color="#9333EA" />
+    </linearGradient>
+
+    <!-- Center Glow -->
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 460) rotate(90) scale(280)">
+      <stop stop-color="white" stop-opacity="1" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Inner Mic Shadow / Detail -->
+    <linearGradient id="mic-inner" x1="450" y1="270" x2="574" y2="530" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFF6FF" />
+      <stop offset="1" stop-color="#BFDBFE" />
+    </linearGradient>
+  </defs>
+</svg>
