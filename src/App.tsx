@@ -1,50 +1,42 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import React, { useEffect, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import MainPage from "./pages/MainPage";
+import OverlayPage from "./pages/OverlayPage";
+import SettingsPage from "./pages/SettingsPage";
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [windowLabel, setWindowLabel] = useState<string | null>(null);
+  const [view, setView] = useState<"main" | "settings">("main");
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+  useEffect(() => {
+    // Determine which window we are in to show the correct page
+    const label = getCurrentWindow().label;
+    setWindowLabel(label);
+    
+    // Also support hash routing as a fallback/dev convenience
+    const hash = window.location.hash;
+    if (hash === "#overlay") {
+      setWindowLabel("overlay");
+    }
+  }, []);
+
+  if (!windowLabel) return null;
+
+  // If we are in the overlay window, always show the OverlayPage
+  if (windowLabel === "overlay") {
+    return <OverlayPage />;
   }
 
+  // If we are in the main window, support view switching
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    <div className="h-full w-full">
+      {view === "main" ? (
+        <MainPage onOpenSettings={() => setView("settings")} />
+      ) : (
+        <SettingsPage onBack={() => setView("main")} />
+      )}
+    </div>
   );
 }
 
