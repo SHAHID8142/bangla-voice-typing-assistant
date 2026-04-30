@@ -27,7 +27,7 @@ Correction Strength: ${options.correctionStrength}`;
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: options.model || "google/gemini-pro",
+        model: options.model || "openrouter/free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Raw Text: ${text}\n\nCorrected Text:` }
