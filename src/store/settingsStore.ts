@@ -17,7 +17,7 @@ export const useSettingsStore = create<SettingsState>()(
         secondaryAiProvider: 'OllamaCloud',
         secondaryAiModel: 'gemma4:e2b',
         tertiaryAiProvider: 'Gemini',
-        tertiaryAiModel: 'gemini-1.5-flash',
+        tertiaryAiModel: 'gemini-2.5-flash',
         ollamaUrl: 'http://localhost:11434',
         ollamaCloudUrl: '',
         ollamaCloudApiKey: '',

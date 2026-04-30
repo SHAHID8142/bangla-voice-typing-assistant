@@ -12,11 +12,11 @@ const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700"
     >
       {includeNone && <option value="">None (Disable Fallback)</option>}
-      <option value="Ollama">Ollama (Local - Private)</option>
+      <option value="Ollama">Ollama (Local - e.g. gemma4:e2b)</option>
       <option value="OllamaCloud">Ollama Cloud (Custom Endpoint)</option>
-      <option value="Gemini">Google Gemini (Free Tier API)</option>
-      <option value="OpenRouter">OpenRouter (Multiple Models)</option>
-      <option value="OpenAI">OpenAI</option>
+      <option value="Gemini">Google Gemini (Free - gemini-2.5-flash)</option>
+      <option value="OpenRouter">OpenRouter (Free - openrouter/free)</option>
+      <option value="OpenAI">OpenAI (Paid API - gpt-4o-mini)</option>
     </select>
   );
 

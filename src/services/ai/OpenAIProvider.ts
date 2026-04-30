@@ -22,7 +22,7 @@ Correction Strength: ${options.correctionStrength}`;
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: options.model || "gpt-3.5-turbo",
+        model: options.model || "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Raw Text: ${text}\n\nCorrected Text:` }

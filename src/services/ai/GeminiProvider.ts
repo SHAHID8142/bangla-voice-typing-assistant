@@ -19,7 +19,7 @@ Correction Strength: ${options.correctionStrength}`;
 
     try {
       const model = this.genAI.getGenerativeModel({ 
-        model: options.model || "gemini-1.5-flash",
+        model: options.model || "gemini-2.5-flash",
         systemInstruction: systemPrompt 
       });
 
