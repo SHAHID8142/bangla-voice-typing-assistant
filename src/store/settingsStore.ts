@@ -10,8 +10,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   settings: {
     sttProvider: 'OpenAI Whisper',
     aiProvider: 'Ollama',
-    aiModel: 'gemma2:2b',
+    aiModel: 'gemma:2b',
     ollamaUrl: 'http://localhost:11434',
+    openaiApiKey: '',
+    geminiApiKey: '',
+    openrouterApiKey: '',
     autoCopy: true,
     autoCleanup: true,
     punctuationMode: 'standard',

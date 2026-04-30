@@ -27,6 +27,9 @@ export interface AppSettings {
   aiProvider: string;
   aiModel: string;
   ollamaUrl: string;
+  openaiApiKey?: string;
+  geminiApiKey?: string;
+  openrouterApiKey?: string;
   autoCopy: boolean;
   autoCleanup: boolean;
   punctuationMode: CleanupOptions['punctuationMode'];

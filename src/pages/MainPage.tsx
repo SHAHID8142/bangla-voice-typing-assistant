@@ -5,6 +5,9 @@ import { useSettingsStore } from '../store/settingsStore';
 import { WhisperSpeechProvider } from '../services/speech/WhisperSpeechProvider';
 import { MockSpeechProvider } from '../services/speech/MockSpeechProvider';
 import { OllamaProvider } from '../services/ai/OllamaProvider';
+import { GeminiProvider } from '../services/ai/GeminiProvider';
+import { OpenAIProvider } from '../services/ai/OpenAIProvider';
+import { OpenRouterProvider } from '../services/ai/OpenRouterProvider';
 import { windowManager } from '../services/windowManager';
 import { listen } from '@tauri-apps/api/event';
 
@@ -59,15 +62,27 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
 
     setIsProcessing(true);
     try {
-      const ai = new OllamaProvider(settings.ollamaUrl);
+      let ai;
+      if (settings.aiProvider === "Gemini" && settings.geminiApiKey) {
+        ai = new GeminiProvider(settings.geminiApiKey);
+      } else if (settings.aiProvider === "OpenRouter" && settings.openrouterApiKey) {
+        ai = new OpenRouterProvider(settings.openrouterApiKey);
+      } else if (settings.aiProvider === "OpenAI" && settings.openaiApiKey) {
+        ai = new OpenAIProvider(settings.openaiApiKey);
+      } else {
+        // Default to Ollama if selected or as a fallback
+        ai = new OllamaProvider(settings.ollamaUrl);
+      }
+
       const cleaned = await ai.cleanText(targetText, {
         punctuationMode: settings.punctuationMode,
         correctionStrength: settings.correctionStrength,
         model: settings.aiModel
       });
       setCorrectedText(prev => prev + " " + cleaned);
-    } catch (err) {
-      setError("AI Cleanup failed. Is Ollama running?");
+    } catch (err: any) {
+      console.error(err);
+      setError(`AI Cleanup failed. ${err.message || "Is the provider configured correctly?"}`);
     } finally {
       setIsProcessing(false);
     }
@@ -236,7 +251,7 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
             </div>
             <div className="flex items-center justify-between text-[11px] font-bold">
               <span className="text-slate-400 uppercase tracking-widest">AI Brain</span>
-              <span className="text-purple-600 px-3 py-1 bg-purple-50 rounded-full">{settings.aiModel}</span>
+              <span className="text-purple-600 px-3 py-1 bg-purple-50 rounded-full">{settings.aiProvider}: {settings.aiModel}</span>
             </div>
           </motion.div>
         </div>

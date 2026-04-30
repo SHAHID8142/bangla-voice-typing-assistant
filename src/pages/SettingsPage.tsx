@@ -40,7 +40,7 @@ const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </select>
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">OpenAI API Key</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">OpenAI API Key (For Whisper)</label>
               <input 
                 type="password" 
                 placeholder="sk-..." 
@@ -60,24 +60,118 @@ const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           </div>
           <div className="grid gap-6 p-8 bg-purple-50/20 rounded-[32px] border border-purple-100/50">
             <div className="flex flex-col gap-2">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ollama Model</label>
-              <input 
-                type="text" 
-                placeholder="gemma2:2b" 
-                value={settings.aiModel}
-                onChange={(e) => updateSettings({ aiModel: e.target.value })}
-                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700" 
-              />
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">AI Provider</label>
+              <select 
+                value={settings.aiProvider}
+                onChange={(e) => updateSettings({ aiProvider: e.target.value })}
+                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700"
+              >
+                <option value="Ollama">Ollama (Local - Private)</option>
+                <option value="Gemini">Google Gemini (Free Tier API)</option>
+                <option value="OpenRouter">OpenRouter (Multiple Models)</option>
+                <option value="OpenAI">OpenAI</option>
+              </select>
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ollama Endpoint</label>
-              <input 
-                type="text" 
-                value={settings.ollamaUrl}
-                onChange={(e) => updateSettings({ ollamaUrl: e.target.value })}
-                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
-              />
-            </div>
+
+            {settings.aiProvider === "Ollama" && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ollama Model</label>
+                  <input 
+                    type="text" 
+                    placeholder="gemma:2b" 
+                    value={settings.aiModel}
+                    onChange={(e) => updateSettings({ aiModel: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700" 
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">If you pulled "gemma 2B", the exact model name is usually <strong>gemma:2b</strong>.</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ollama Endpoint</label>
+                  <input 
+                    type="text" 
+                    value={settings.ollamaUrl}
+                    onChange={(e) => updateSettings({ ollamaUrl: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
+                  />
+                </div>
+              </>
+            )}
+
+            {settings.aiProvider === "Gemini" && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Gemini API Key</label>
+                  <input 
+                    type="password" 
+                    placeholder="AIzaSy..." 
+                    value={settings.geminiApiKey || ""}
+                    onChange={(e) => updateSettings({ geminiApiKey: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Model Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="gemini-1.5-flash" 
+                    value={settings.aiModel}
+                    onChange={(e) => updateSettings({ aiModel: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700" 
+                  />
+                </div>
+              </>
+            )}
+
+            {settings.aiProvider === "OpenRouter" && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">OpenRouter API Key</label>
+                  <input 
+                    type="password" 
+                    placeholder="sk-or-v1-..." 
+                    value={settings.openrouterApiKey || ""}
+                    onChange={(e) => updateSettings({ openrouterApiKey: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Model Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="google/gemini-2.0-flash-exp:free" 
+                    value={settings.aiModel}
+                    onChange={(e) => updateSettings({ aiModel: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700" 
+                  />
+                </div>
+              </>
+            )}
+
+            {settings.aiProvider === "OpenAI" && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">OpenAI API Key</label>
+                  <input 
+                    type="password" 
+                    placeholder="sk-..." 
+                    value={settings.openaiApiKey || ""}
+                    onChange={(e) => updateSettings({ openaiApiKey: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Model Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="gpt-4o-mini" 
+                    value={settings.aiModel}
+                    onChange={(e) => updateSettings({ aiModel: e.target.value })}
+                    className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700" 
+                  />
+                </div>
+              </>
+            )}
           </div>
         </section>
 
