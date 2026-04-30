@@ -7,22 +7,22 @@
 - [x] Research UI/UX features (Mictab.com inspired floating overlay, wave animations)
 - [x] Draft Comprehensive `PLAN.md`
 - [x] Create `todo.md` and `progress.md`
-- [ ] Initialize Git repository and push to GitHub (Pending Plan Approval)
-- [ ] Scaffold Tauri Application
+- [x] Initialize Git repository
+- [x] Scaffold Tauri Application
 
 ## Milestone 2: UI & Core Mechanics
-- [ ] Build Main Window UI
-- [ ] Build Frameless Overlay Window
-- [ ] Implement Waveform Animations
-- [ ] Set up global state management
+- [x] Build Main Window UI
+- [x] Build Frameless Overlay Window
+- [x] Implement Waveform Animations
+- [x] Set up global state management (Zustand)
 
 ## Milestone 3: Integrations
-- [ ] Microphone integration & permissions
-- [ ] Cloud STT integration
-- [ ] Local Ollama integration & auto-pull
-- [ ] Cloud AI Provider fallbacks
+- [x] Microphone integration abstraction
+- [x] Cloud STT integration (OpenAI Whisper)
+- [x] Local Ollama integration
+- [x] Multi-window communication bridge
 
 ## Milestone 4: Polish & QA
-- [ ] Secure settings storage
-- [ ] Edge-case handling (missing models, offline)
-- [ ] Cross-platform testing (Windows/macOS)
+- [x] High-fidelity styling and animations
+- [ ] Secure settings storage (Pending tauri-plugin-store implementation)
+- [ ] Final cross-platform QA
