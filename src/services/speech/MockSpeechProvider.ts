@@ -1,4 +1,4 @@
-import { SpeechProvider, TranscriptionResult } from '../types';
+import { SpeechProvider, TranscriptionResult } from '../../types';
 
 /**
  * A mock provider for development and testing UI/UX flows without API keys.
@@ -8,7 +8,7 @@ export class MockSpeechProvider implements SpeechProvider {
   isRecording = false;
   private interval: number | null = null;
 
-  async startRecording(onResult: (result: TranscriptionResult) => void, onError: (error: string) => void): Promise<void> {
+  async startRecording(onResult: (result: TranscriptionResult) => void, _onError: (error: string) => void): Promise<void> {
     this.isRecording = true;
     const phrases = [
         "আসসালামু আলাইকুম",

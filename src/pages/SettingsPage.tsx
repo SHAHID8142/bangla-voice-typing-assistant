@@ -1,86 +1,120 @@
-import React, { useState } from 'react';
-import { ChevronLeft, Database, Globe, Cpu, Save } from 'lucide-react';
+import React from 'react';
+import { ChevronLeft, Globe, Cpu, Save } from 'lucide-react';
+import { useSettingsStore } from '../store/settingsStore';
 
 const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const { settings, updateSettings } = useSettingsStore();
+
   return (
-    <div className="flex flex-col h-screen bg-white text-slate-900">
-      <header className="flex items-center gap-4 px-6 py-4 border-b">
+    <div className="flex flex-col h-screen bg-white text-slate-900 font-sans">
+      <header className="flex items-center gap-4 px-8 py-5 border-b border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
         <button 
           onClick={onBack}
-          className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+          className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-slate-600"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-xl font-bold">Settings</h1>
+        <div>
+          <h1 className="text-lg font-black tracking-tight text-slate-800">Settings</h1>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Preferences & API Keys</p>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full space-y-8">
+      <div className="flex-1 overflow-y-auto p-8 max-w-2xl mx-auto w-full space-y-12">
         {/* STT Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-blue-600">
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 text-blue-600">
             <Globe className="w-5 h-5" />
-            <h2 className="font-bold uppercase text-sm tracking-wider">Speech Recognition</h2>
+            <h2 className="font-black uppercase text-[11px] tracking-[0.2em]">Speech Recognition</h2>
           </div>
-          <div className="grid gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700">STT Provider</label>
-              <select className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                <option>OpenAI Whisper (Cloud)</option>
-                <option>Google Speech-to-Text</option>
-                <option disabled>Local (Coming Soon)</option>
+          <div className="grid gap-6 p-8 bg-slate-50/50 rounded-[32px] border border-slate-100">
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">STT Provider</label>
+              <select 
+                value={settings.sttApiKey ? "Whisper" : "Mock"}
+                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none shadow-sm transition-all font-bold text-slate-700"
+                disabled
+              >
+                <option value="Whisper">OpenAI Whisper (Cloud)</option>
+                <option value="Mock">Mock Provider (Local Testing)</option>
               </select>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700">API Key</label>
-              <input type="password" placeholder="sk-..." className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">OpenAI API Key</label>
+              <input 
+                type="password" 
+                placeholder="sk-..." 
+                value={settings.sttApiKey || ""}
+                onChange={(e) => updateSettings({ sttApiKey: e.target.value })}
+                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
+              />
             </div>
           </div>
         </section>
 
         {/* AI Cleanup Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-purple-600">
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 text-purple-600">
             <Cpu className="w-5 h-5" />
-            <h2 className="font-bold uppercase text-sm tracking-wider">AI Text Correction</h2>
+            <h2 className="font-black uppercase text-[11px] tracking-[0.2em]">AI Text Correction</h2>
           </div>
-          <div className="grid gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700">AI Provider</label>
-              <select className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
-                <option>Ollama (Local)</option>
-                <option>OpenAI</option>
-                <option>Gemini</option>
-                <option>OpenRouter</option>
-              </select>
+          <div className="grid gap-6 p-8 bg-purple-50/20 rounded-[32px] border border-purple-100/50">
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ollama Model</label>
+              <input 
+                type="text" 
+                placeholder="gemma2:2b" 
+                value={settings.aiModel}
+                onChange={(e) => updateSettings({ aiModel: e.target.value })}
+                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-bold text-slate-700" 
+              />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700">Model Name</label>
-              <input type="text" placeholder="gemma2:2b" className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" />
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Ollama Endpoint</label>
+              <input 
+                type="text" 
+                value={settings.ollamaUrl}
+                onChange={(e) => updateSettings({ ollamaUrl: e.target.value })}
+                className="w-full p-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-purple-500/10 outline-none shadow-sm transition-all font-medium text-slate-700" 
+              />
             </div>
           </div>
         </section>
 
         {/* Preferences */}
-        <section className="space-y-4 pt-4 border-t">
-          <div className="flex items-center justify-between">
+        <section className="space-y-6 pt-6 border-t border-slate-100">
+          <div className="flex items-center justify-between p-6 bg-slate-50/30 rounded-2xl border border-slate-50">
             <div>
-              <p className="font-bold">Auto-copy to Clipboard</p>
-              <p className="text-sm text-slate-500">Copy corrected text automatically after dictation</p>
+              <p className="font-black text-xs text-slate-700 uppercase tracking-widest">Auto-copy to Clipboard</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Copy corrected text automatically</p>
             </div>
-            <input type="checkbox" className="w-5 h-5 accent-blue-600" defaultChecked />
+            <input 
+                type="checkbox" 
+                checked={settings.autoCopy}
+                onChange={(e) => updateSettings({ autoCopy: e.target.checked })}
+                className="w-6 h-6 rounded-lg accent-blue-600 transition-all cursor-pointer" 
+            />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-6 bg-slate-50/30 rounded-2xl border border-slate-50">
             <div>
-              <p className="font-bold">Auto-cleanup</p>
-              <p className="text-sm text-slate-500">Run AI correction immediately after stopping</p>
+              <p className="font-black text-xs text-slate-700 uppercase tracking-widest">Auto-cleanup</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Run AI correction immediately</p>
             </div>
-            <input type="checkbox" className="w-5 h-5 accent-blue-600" defaultChecked />
+            <input 
+                type="checkbox" 
+                checked={settings.autoCleanup}
+                onChange={(e) => updateSettings({ autoCleanup: e.target.checked })}
+                className="w-6 h-6 rounded-lg accent-blue-600 transition-all cursor-pointer" 
+            />
           </div>
         </section>
 
-        <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
+        <button 
+          onClick={onBack}
+          className="w-full py-6 bg-slate-900 text-white rounded-[28px] font-black text-lg flex items-center justify-center gap-3 hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200"
+        >
           <Save className="w-5 h-5" />
-          Save Settings
+          Save & Return
         </button>
       </div>
     </div>

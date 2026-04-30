@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { motion, AnimatePresence } from "framer-motion";
 import MainPage from "./pages/MainPage";
 import OverlayPage from "./pages/OverlayPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -28,14 +29,34 @@ function App() {
     return <OverlayPage />;
   }
 
-  // If we are in the main window, support view switching
+  // If we are in the main window, support animated view switching
   return (
-    <div className="h-full w-full">
-      {view === "main" ? (
-        <MainPage onOpenSettings={() => setView("settings")} />
-      ) : (
-        <SettingsPage onBack={() => setView("main")} />
-      )}
+    <div className="h-screen w-screen overflow-hidden bg-[#F8FAFC]">
+      <AnimatePresence mode="wait">
+        {view === "main" ? (
+          <motion.div
+            key="main"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="h-full w-full"
+          >
+            <MainPage onOpenSettings={() => setView("settings")} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="settings"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="h-full w-full"
+          >
+            <SettingsPage onBack={() => setView("main")} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

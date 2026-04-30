@@ -20,6 +20,6 @@ export const windowManager = {
   async toggleRecording() {
     // This will be called from both Main and Overlay
     // We'll use Tauri events or a shared state to sync recording status
-    await invoke("toggle_recording");
+    await invoke("toggle_recording_cmd");
   }
 };

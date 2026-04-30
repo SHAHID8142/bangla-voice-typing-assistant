@@ -1,4 +1,4 @@
-import { AIProvider, CleanupOptions } from '../types';
+import { AIProvider, CleanupOptions } from '../../types';
 
 export class OllamaProvider implements AIProvider {
   name = "Ollama";

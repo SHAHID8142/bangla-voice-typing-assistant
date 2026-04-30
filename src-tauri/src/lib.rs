@@ -1,27 +1,22 @@
-use tauri::{AppHandle, Emitter, Manager};
-
 #[tauri::command]
-pub async fn toggle_recording(app: AppHandle) -> Result<(), String> {
-    // In a real app, we'd check a mutex or state
-    // For now, let's just emit an event to both
-    app.emit("recording_toggled", {}).map_err(|e| e.to_string())?;
-    
-    Ok(())
+async fn toggle_recording_cmd(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Emitter;
+    app.emit("recording_toggled", ()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn start_dictation(app: AppHandle) -> Result<(), String> {
+async fn start_dictation_cmd(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Manager;
     let overlay = app.get_webview_window("overlay").ok_or("Overlay not found")?;
     overlay.show().map_err(|e| e.to_string())?;
-    overlay.set_focus().map_err(|e| e.to_string())?;
-    Ok(())
+    overlay.set_focus().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn stop_dictation(app: AppHandle) -> Result<(), String> {
+async fn stop_dictation_cmd(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Manager;
     let overlay = app.get_webview_window("overlay").ok_or("Overlay not found")?;
-    overlay.hide().map_err(|e| e.to_string())?;
-    Ok(())
+    overlay.hide().map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -29,9 +24,9 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            toggle_recording,
-            start_dictation,
-            stop_dictation
+            toggle_recording_cmd,
+            start_dictation_cmd,
+            stop_dictation_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tailwindcss": {
+      "command": "npx",
+      "args": ["-y", "tailwindcss-mcp-server"]
+    },
+    "tauri": {
+      "command": "node",
+      "args": ["/Users/maryam/Desktop/Bangla Voice Typing Assistant/servers/tauri-mcp/server/index.js", "--app-path", "/Users/maryam/Desktop/Bangla Voice Typing Assistant"]
+    }
+  }
+}
