@@ -24,8 +24,12 @@ export interface CleanupOptions {
 export interface AppSettings {
   sttProvider: string;
   sttApiKey?: string;
-  aiProvider: string;
+  aiProvider: string; // This will now act as the Primary Provider
   aiModel: string;
+  secondaryAiProvider?: string;
+  secondaryAiModel?: string;
+  tertiaryAiProvider?: string;
+  tertiaryAiModel?: string;
   ollamaUrl: string;
   openaiApiKey?: string;
   geminiApiKey?: string;
@@ -34,4 +38,6 @@ export interface AppSettings {
   autoCleanup: boolean;
   punctuationMode: CleanupOptions['punctuationMode'];
   correctionStrength: CleanupOptions['correctionStrength'];
+  recordingMode: 'toggle' | 'hold';
+  shortcutKey: string;
 }

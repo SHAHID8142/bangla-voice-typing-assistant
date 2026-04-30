@@ -10,6 +10,9 @@ import { OpenAIProvider } from '../services/ai/OpenAIProvider';
 import { OpenRouterProvider } from '../services/ai/OpenRouterProvider';
 import { windowManager } from '../services/windowManager';
 import { listen } from '@tauri-apps/api/event';
+import { Waveform } from '../components/Waveform';
+import { invoke } from '@tauri-apps/api/core';
+import { isRegistered, register } from '@tauri-apps/plugin-global-shortcut';
 
 const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) => {
   const { settings } = useSettingsStore();
@@ -19,6 +22,34 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
   const [correctedText, setCorrectedText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Global Shortcut Registration
+  useEffect(() => {
+    const setupShortcut = async () => {
+      try {
+        const registered = await isRegistered(settings.shortcutKey);
+        if (!registered) {
+          await register(settings.shortcutKey, (event) => {
+            if (event.state === 'Pressed') {
+              if (settings.recordingMode === 'toggle') {
+                handleToggleRecording();
+              } else {
+                // Hold to talk: Start
+                startRecording();
+              }
+            } else if (event.state === 'Released' && settings.recordingMode === 'hold') {
+               // Hold to talk: Stop
+               stopRecording();
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to bind global shortcut", err);
+      }
+    };
+    
+    setupShortcut();
+  }, [settings.shortcutKey, settings.recordingMode, isRecording]);
+
   useEffect(() => {
     const unlisten = listen("recording_toggled", () => {
         handleToggleRecording();
@@ -26,14 +57,27 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
     return () => { unlisten.then(f => f()); };
   }, [isRecording]);
 
+  const startRecording = async () => {
+    if (isRecording) return;
+    setIsRecording(true);
+    await invoke('set_tray_recording_state', { isRecording: true });
+    // Tell backend not to show overlay if we are visible
+    await windowManager.showOverlay(); 
+    startDictationFlow();
+  };
+
+  const stopRecording = async () => {
+    if (!isRecording) return;
+    setIsRecording(false);
+    await invoke('set_tray_recording_state', { isRecording: false });
+    await windowManager.hideOverlay();
+  };
+
   const handleToggleRecording = async () => {
     if (isRecording) {
-      setIsRecording(false);
-      await windowManager.hideOverlay();
+      stopRecording();
     } else {
-      setIsRecording(true);
-      await windowManager.showOverlay();
-      startDictationFlow();
+      startRecording();
     }
   };
 
@@ -50,10 +94,30 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
       },
       (err) => {
         setError(err);
-        setIsRecording(false);
-        windowManager.hideOverlay();
+        stopRecording();
       }
     );
+  };
+
+  const executeProvider = async (providerName: string, text: string) => {
+    let ai;
+    if (providerName === "Gemini" && settings.geminiApiKey) {
+      ai = new GeminiProvider(settings.geminiApiKey);
+    } else if (providerName === "OpenRouter" && settings.openrouterApiKey) {
+      ai = new OpenRouterProvider(settings.openrouterApiKey);
+    } else if (providerName === "OpenAI" && settings.openaiApiKey) {
+      ai = new OpenAIProvider(settings.openaiApiKey);
+    } else if (providerName === "Ollama") {
+      ai = new OllamaProvider(settings.ollamaUrl);
+    } else {
+      throw new Error(`Provider ${providerName} not configured or missing API key.`);
+    }
+
+    return await ai.cleanText(text, {
+      punctuationMode: settings.punctuationMode,
+      correctionStrength: settings.correctionStrength,
+      model: settings.aiModel
+    });
   };
 
   const handleAICleanup = async (textToClean?: string) => {
@@ -61,28 +125,33 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
     if (!targetText) return;
 
     setIsProcessing(true);
+    setError(null);
+    
     try {
-      let ai;
-      if (settings.aiProvider === "Gemini" && settings.geminiApiKey) {
-        ai = new GeminiProvider(settings.geminiApiKey);
-      } else if (settings.aiProvider === "OpenRouter" && settings.openrouterApiKey) {
-        ai = new OpenRouterProvider(settings.openrouterApiKey);
-      } else if (settings.aiProvider === "OpenAI" && settings.openaiApiKey) {
-        ai = new OpenAIProvider(settings.openaiApiKey);
-      } else {
-        // Default to Ollama if selected or as a fallback
-        ai = new OllamaProvider(settings.ollamaUrl);
-      }
-
-      const cleaned = await ai.cleanText(targetText, {
-        punctuationMode: settings.punctuationMode,
-        correctionStrength: settings.correctionStrength,
-        model: settings.aiModel
+      // 1. Try Primary
+      let cleaned = await executeProvider(settings.aiProvider, targetText).catch(async (e) => {
+        console.warn("Primary failed", e);
+        // 2. Try Secondary
+        if (settings.secondaryAiProvider) {
+           setError(`Primary (${settings.aiProvider}) failed. Trying fallback...`);
+           return await executeProvider(settings.secondaryAiProvider, targetText).catch(async (e2) => {
+              console.warn("Secondary failed", e2);
+              // 3. Try Tertiary
+              if (settings.tertiaryAiProvider) {
+                 setError(`Secondary (${settings.secondaryAiProvider}) failed. Trying final fallback...`);
+                 return await executeProvider(settings.tertiaryAiProvider, targetText);
+              }
+              throw e2;
+           });
+        }
+        throw e;
       });
+
       setCorrectedText(prev => prev + " " + cleaned);
+      setError(null); // Clear errors if successful
     } catch (err: any) {
-      console.error(err);
-      setError(`AI Cleanup failed. ${err.message || "Is the provider configured correctly?"}`);
+      console.error("All AI cleanups failed", err);
+      setError(`AI Cleanup failed. ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -90,15 +159,12 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } }
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
+    hidden: { opacity: 0, y: 15, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120 } }
   };
 
   return (
@@ -106,7 +172,7 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="flex flex-col h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden"
+      className="flex flex-col h-screen bg-[#F1F5F9] text-slate-900 font-sans overflow-hidden"
     >
       <AnimatePresence>
         {error && (
@@ -114,7 +180,7 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
             initial={{ opacity: 0, y: -50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute top-20 right-6 bg-red-50 border border-red-200 p-4 rounded-2xl shadow-2xl text-red-600 text-sm z-50 flex items-center gap-3"
+            className="absolute top-20 right-6 bg-red-50/90 backdrop-blur-xl border border-red-200 p-4 rounded-2xl shadow-2xl text-red-600 text-sm z-50 flex items-center gap-3"
           >
             <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                 <Info className="w-4 h-4" />
@@ -124,110 +190,128 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
         )}
       </AnimatePresence>
 
-      <motion.header variants={itemVariants} className="flex items-center justify-between px-8 py-5 bg-white border-b border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-        <div className="flex items-center gap-3">
-          <motion.div 
-            whileHover={{ rotate: 15 }}
-            className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200"
-          >
-            <Mic className="text-white w-6 h-6" />
-          </motion.div>
+      <motion.header variants={itemVariants} className="flex items-center justify-between px-10 py-6 bg-white/60 backdrop-blur-xl border-b border-slate-200/50 z-10 relative">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500 blur-md opacity-20 rounded-full" />
+            <motion.div 
+              whileHover={{ rotate: 10, scale: 1.05 }}
+              className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg relative z-10"
+            >
+              <Mic className="text-white w-6 h-6" />
+            </motion.div>
+          </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-800">Bangla Voice</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">AI Dictation Suite</p>
+            <h1 className="text-xl font-black tracking-tight text-slate-800">Bangla Voice</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">Studio Edition</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-slate-600">
+
+        {/* Header Waveform (Premium Touch) */}
+        <div className="flex-1 max-w-[200px] mx-8">
+           <Waveform isRecording={isRecording} theme="light" className="h-10 opacity-70" />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button className="p-3 bg-white hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-slate-700 shadow-sm border border-slate-100">
             <HelpCircle className="w-5 h-5" />
           </button>
           <button 
             onClick={onOpenSettings}
-            className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-slate-600"
+            className="p-3 bg-white hover:bg-slate-50 rounded-2xl transition-all text-slate-400 hover:text-slate-700 shadow-sm border border-slate-100"
           >
             <Settings className="w-5 h-5" />
           </button>
         </div>
       </motion.header>
 
-      <main className="flex-1 flex gap-8 p-8 overflow-hidden">
-        <motion.div variants={itemVariants} className="flex-1 flex flex-col gap-4 bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden relative group transition-all hover:shadow-[0_8px_40px_rgb(0,0,0,0.06)]">
-          <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-            <div className="flex items-center gap-3">
-                <span className="font-black text-[11px] uppercase tracking-[0.2em] text-slate-400">Editor</span>
+      <main className="flex-1 flex gap-8 p-10 overflow-hidden relative z-0">
+        {/* Editor Area */}
+        <motion.div variants={itemVariants} className="flex-1 flex flex-col gap-0 bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-white overflow-hidden relative group">
+          <div className="px-8 py-6 border-b border-slate-100/50 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+                <span className="font-black text-[12px] uppercase tracking-[0.25em] text-slate-400">Final Text</span>
                 <AnimatePresence>
                   {isProcessing && (
                     <motion.div 
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0 }}
-                      className="flex items-center gap-2 px-2 py-0.5 bg-purple-50 rounded-full"
+                      className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-50 to-blue-50 rounded-full border border-purple-100"
                     >
-                      <Loader2 className="w-3 h-3 text-purple-500 animate-spin" />
-                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-tighter">Cleaning...</span>
+                      <Loader2 className="w-3.5 h-3.5 text-purple-500 animate-spin" />
+                      <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Enhancing</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => navigator.clipboard.writeText(correctedText)} 
-                className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-500 hover:bg-white hover:text-blue-600 rounded-xl transition-all border border-transparent hover:border-slate-100 shadow-sm hover:shadow-md"
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-colors"
               >
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="w-4 h-4" />
                 Copy
               </motion.button>
               <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => { setCorrectedText(""); setRawText(""); }} 
-                className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-500 hover:bg-white hover:text-red-600 rounded-xl transition-all border border-transparent hover:border-slate-100 shadow-sm hover:shadow-md"
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-2xl transition-colors"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
                 Clear
               </motion.button>
             </div>
           </div>
           <textarea
-            className="flex-1 p-8 text-2xl leading-[1.6] resize-none focus:outline-none placeholder:text-slate-200 font-medium text-slate-700 selection:bg-blue-100"
-            placeholder="আপনার কথা এখানে পরিষ্কার বাংলা টেক্সট হিসেবে আসবে..."
+            className="flex-1 p-10 text-3xl leading-[1.7] resize-none focus:outline-none placeholder:text-slate-200 font-medium text-slate-800 bg-transparent selection:bg-blue-200"
+            placeholder="Speak freely. Your ideas will appear here, perfectly formatted..."
             value={correctedText}
             onChange={(e) => setCorrectedText(e.target.value)}
           />
         </motion.div>
 
-        <div className="w-96 flex flex-col gap-8">
-          <motion.div variants={itemVariants} className="flex-1 flex flex-col bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden group hover:shadow-[0_8px_40px_rgb(0,0,0,0.06)] transition-all">
-            <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/30">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Raw Dictation</span>
+        {/* Right Sidebar */}
+        <div className="w-[420px] flex flex-col gap-6">
+          <motion.div variants={itemVariants} className="flex-1 flex flex-col bg-white/80 backdrop-blur-3xl rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] border border-white overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100/50">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Live Dictation</span>
             </div>
-            <div className="flex-1 p-6 text-slate-400 text-lg italic overflow-y-auto leading-relaxed scrollbar-hide">
-              {rawText || "Start dictating to see raw output..."}
+            <div className="flex-1 p-8 text-slate-500 text-xl font-medium italic overflow-y-auto leading-relaxed scrollbar-hide">
+              {rawText || "Raw text will stream here as you speak..."}
             </div>
           </motion.div>
 
           <motion.div variants={itemVariants} className="flex flex-col gap-4">
             <motion.button 
-              whileHover={{ scale: 1.02, y: -2 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => windowManager.toggleRecording()}
-              className={`w-full py-6 rounded-[28px] font-black text-xl flex items-center justify-center gap-4 transition-all shadow-2xl ${
+              onPointerDown={() => { if(settings.recordingMode==='hold') startRecording() }}
+              onPointerUp={() => { if(settings.recordingMode==='hold') stopRecording() }}
+              onPointerLeave={() => { if(settings.recordingMode==='hold') stopRecording() }}
+              onClick={() => { if(settings.recordingMode==='toggle') handleToggleRecording() }}
+              className={`w-full py-8 rounded-[32px] font-black text-2xl flex items-center justify-center gap-4 transition-all relative overflow-hidden group ${
                 isRecording 
-                ? 'bg-red-500 text-white shadow-red-200' 
-                : 'bg-blue-600 text-white shadow-blue-200'
+                ? 'bg-red-500 text-white shadow-[0_20px_40px_-10px_rgba(239,68,68,0.5)]' 
+                : 'bg-slate-900 text-white shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] hover:bg-blue-600'
               }`}
             >
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               {isRecording ? (
                 <>
-                  <div className="w-4 h-4 bg-white rounded-full animate-ping" />
-                  Stop
+                  <div className="w-5 h-5 bg-white rounded-full animate-ping" />
+                  {settings.recordingMode === 'hold' ? 'Release to Stop' : 'Stop Dictation'}
                 </>
               ) : (
                 <>
-                  <Mic className="w-7 h-7" />
-                  Dictate
+                  <Mic className="w-8 h-8" />
+                  {settings.recordingMode === 'hold' ? 'Hold to Talk' : 'Start Dictation'}
                 </>
               )}
             </motion.button>
@@ -236,33 +320,15 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
               whileHover={rawText && !isProcessing ? { scale: 1.02 } : {}}
               whileTap={rawText && !isProcessing ? { scale: 0.98 } : {}}
               disabled={!rawText || isProcessing}
-              className="w-full py-5 bg-white border border-slate-100 rounded-[28px] font-black text-slate-600 flex items-center justify-center gap-4 hover:bg-slate-50 transition-all shadow-lg shadow-slate-100 disabled:opacity-30 disabled:grayscale cursor-pointer disabled:cursor-not-allowed"
+              className="w-full py-6 bg-white border border-slate-100 rounded-[32px] font-black text-slate-700 text-lg flex items-center justify-center gap-3 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-100 transition-all shadow-sm disabled:opacity-40 disabled:grayscale cursor-pointer disabled:cursor-not-allowed"
               onClick={() => handleAICleanup()}
             >
-              <Wand2 className={`w-5 h-5 text-purple-500 ${isProcessing ? 'animate-bounce' : ''}`} />
+              <Wand2 className={`w-6 h-6 ${isProcessing ? 'animate-bounce text-purple-500' : ''}`} />
               Magic Cleanup
             </motion.button>
           </motion.div>
-
-          <motion.div variants={itemVariants} className="bg-slate-100/40 p-6 rounded-[32px] border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-slate-400 uppercase tracking-widest">STT Engine</span>
-              <span className="text-blue-600 px-3 py-1 bg-blue-50 rounded-full">{settings.sttApiKey ? 'Whisper' : 'Mock'}</span>
-            </div>
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-slate-400 uppercase tracking-widest">AI Brain</span>
-              <span className="text-purple-600 px-3 py-1 bg-purple-50 rounded-full">{settings.aiProvider}: {settings.aiModel}</span>
-            </div>
-          </motion.div>
         </div>
       </main>
-
-      <motion.footer 
-        variants={itemVariants}
-        className="px-8 py-4 text-center text-[9px] uppercase tracking-[0.3em] font-black text-slate-300 bg-white border-t border-slate-50"
-      >
-        Developed for Professional Bangla Dictation • 2026
-      </motion.footer>
     </motion.div>
   );
 };
