@@ -17,17 +17,36 @@ Punctuation Mode: ${options.punctuationMode}
 Correction Strength: ${options.correctionStrength}`;
 
     try {
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
+      const requestBody = {
+        model: options.model || "gemma:2b",
+        prompt: `${systemPrompt}\n\nRaw Text: ${text}\n\nCorrected Text:`,
+        stream: false,
+      };
+
+      let response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: options.model || "gemma2:2b",
-          prompt: `${systemPrompt}\n\nRaw Text: ${text}\n\nCorrected Text:`,
-          stream: false,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) throw new Error("Ollama request failed");
+      // If model is not found, auto-pull it
+      if (response.status === 404) {
+        console.warn(`Ollama model ${requestBody.model} not found. Attempting to pull...`);
+        await this.pullModel(requestBody.model);
+        
+        // Retry generate request after pulling
+        response = await fetch(`${this.baseUrl}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+      }
+
+      if (!response.ok) {
+         const errorText = await response.text();
+         throw new Error(`Ollama request failed: ${response.status} ${errorText}`);
+      }
+
       const data = await response.json();
       return data.response.trim();
     } catch (error) {
