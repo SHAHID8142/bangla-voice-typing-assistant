@@ -10,6 +10,12 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOS": {
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Bangla Voice Typing Assistant needs access to your microphone to transcribe your speech to text.",
+        "NSSpeechRecognitionUsageDescription": "Bangla Voice Typing Assistant needs access to speech recognition."
+      }
+    },
     "windows": [
       {
         "label": "main",

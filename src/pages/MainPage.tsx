@@ -5,6 +5,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { WhisperSpeechProvider } from '../services/speech/WhisperSpeechProvider';
 import { MockSpeechProvider } from '../services/speech/MockSpeechProvider';
 import { OllamaProvider } from '../services/ai/OllamaProvider';
+import { OllamaCloudProvider } from '../services/ai/OllamaCloudProvider';
 import { GeminiProvider } from '../services/ai/GeminiProvider';
 import { OpenAIProvider } from '../services/ai/OpenAIProvider';
 import { OpenRouterProvider } from '../services/ai/OpenRouterProvider';
@@ -107,6 +108,8 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
       ai = new OpenRouterProvider(settings.openrouterApiKey);
     } else if (providerName === "OpenAI" && settings.openaiApiKey) {
       ai = new OpenAIProvider(settings.openaiApiKey);
+    } else if (providerName === "OllamaCloud" && settings.ollamaCloudUrl && settings.ollamaCloudApiKey) {
+      ai = new OllamaCloudProvider(settings.ollamaCloudUrl, settings.ollamaCloudApiKey);
     } else if (providerName === "Ollama") {
       ai = new OllamaProvider(settings.ollamaUrl);
     } else {

@@ -31,6 +31,8 @@ export interface AppSettings {
   tertiaryAiProvider?: string;
   tertiaryAiModel?: string;
   ollamaUrl: string;
+  ollamaCloudUrl?: string;
+  ollamaCloudApiKey?: string;
   openaiApiKey?: string;
   geminiApiKey?: string;
   openrouterApiKey?: string;

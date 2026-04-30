@@ -13,6 +13,7 @@ const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     >
       {includeNone && <option value="">None (Disable Fallback)</option>}
       <option value="Ollama">Ollama (Local - Private)</option>
+      <option value="OllamaCloud">Ollama Cloud (Custom Endpoint)</option>
       <option value="Gemini">Google Gemini (Free Tier API)</option>
       <option value="OpenRouter">OpenRouter (Multiple Models)</option>
       <option value="OpenAI">OpenAI</option>
@@ -188,6 +189,26 @@ const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       type="text" 
                       value={settings.ollamaUrl}
                       onChange={(e) => updateSettings({ ollamaUrl: e.target.value })}
+                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-slate-700" 
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ollama Cloud Endpoint</label>
+                    <input 
+                      type="text" 
+                      placeholder="https://api.ollama.com"
+                      value={settings.ollamaCloudUrl || ""}
+                      onChange={(e) => updateSettings({ ollamaCloudUrl: e.target.value })}
+                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-slate-700" 
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ollama Cloud API Key</label>
+                    <input 
+                      type="password" 
+                      placeholder="sk-..." 
+                      value={settings.ollamaCloudApiKey || ""}
+                      onChange={(e) => updateSettings({ ollamaCloudApiKey: e.target.value })}
                       className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-slate-700" 
                     />
                   </div>
