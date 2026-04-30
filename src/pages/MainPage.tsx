@@ -99,7 +99,7 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
     );
   };
 
-  const executeProvider = async (providerName: string, text: string) => {
+  const executeProvider = async (providerName: string, modelName: string, text: string) => {
     let ai;
     if (providerName === "Gemini" && settings.geminiApiKey) {
       ai = new GeminiProvider(settings.geminiApiKey);
@@ -116,7 +116,7 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
     return await ai.cleanText(text, {
       punctuationMode: settings.punctuationMode,
       correctionStrength: settings.correctionStrength,
-      model: settings.aiModel
+      model: modelName
     });
   };
 
@@ -129,17 +129,17 @@ const MainPage: React.FC<{ onOpenSettings: () => void }> = ({ onOpenSettings }) 
     
     try {
       // 1. Try Primary
-      let cleaned = await executeProvider(settings.aiProvider, targetText).catch(async (e) => {
+      let cleaned = await executeProvider(settings.aiProvider, settings.aiModel, targetText).catch(async (e) => {
         console.warn("Primary failed", e);
         // 2. Try Secondary
-        if (settings.secondaryAiProvider) {
+        if (settings.secondaryAiProvider && settings.secondaryAiModel) {
            setError(`Primary (${settings.aiProvider}) failed. Trying fallback...`);
-           return await executeProvider(settings.secondaryAiProvider, targetText).catch(async (e2) => {
+           return await executeProvider(settings.secondaryAiProvider, settings.secondaryAiModel, targetText).catch(async (e2) => {
               console.warn("Secondary failed", e2);
               // 3. Try Tertiary
-              if (settings.tertiaryAiProvider) {
+              if (settings.tertiaryAiProvider && settings.tertiaryAiModel) {
                  setError(`Secondary (${settings.secondaryAiProvider}) failed. Trying final fallback...`);
-                 return await executeProvider(settings.tertiaryAiProvider, targetText);
+                 return await executeProvider(settings.tertiaryAiProvider, settings.tertiaryAiModel, targetText);
               }
               throw e2;
            });
