@@ -11,7 +11,8 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       settings: {
-        sttProvider: 'OpenAI Whisper',
+        uiMode: 'focus',
+        sttProvider: 'Gemma 4 E2B',
         aiProvider: 'Ollama',
         aiModel: 'gemma4:e2b',
         secondaryAiProvider: 'OllamaCloud',
@@ -29,13 +30,28 @@ export const useSettingsStore = create<SettingsState>()(
         punctuationMode: 'standard',
         correctionStrength: 'balanced',
         recordingMode: 'toggle',
-        shortcutKey: 'OptionOrAlt+Space',
+        shortcutKey: 'CommandOrControl+Shift+Space',
+        demoMode: false,
+        lastWorkingOllamaUrl: '',
       },
       updateSettings: (newSettings) => 
         set((state) => ({ settings: { ...state.settings, ...newSettings } })),
     }),
     {
       name: 'bangla-voice-settings',
+      version: 2,
+      merge: (persistedState, currentState) => {
+        const typed = persistedState as SettingsState | undefined;
+        if (!typed?.settings) return currentState;
+        return {
+          ...currentState,
+          ...typed,
+          settings: {
+            ...currentState.settings,
+            ...typed.settings,
+          },
+        };
+      },
     }
   )
 );

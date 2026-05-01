@@ -1,43 +1,62 @@
-# Project To-Do List
+# Bangla Voice Typing Assistant - To-Do List
 
-### Setup & Infrastructure
-- [ ] Initialize Git repository (`git init`).
-- [ ] Create initial commit and push to a new GitHub remote.
-- [ ] Initialize Tauri app with `create-tauri-app` (React, TypeScript).
-- [ ] Install dependencies: `tailwindcss`, `framer-motion`, `lucide-react`, `zustand`.
-- [ ] Configure `tauri.conf.json` to allow multiple windows (Main + Overlay) and required permissions (Audio).
+## 🔴 Critical Issues - FIXED ✅
+- [x] Fixed: MockSpeechProvider auto-generates text (demo mode now opt-in)
+- [x] Fixed: Overlay shows even when main window focused (now checks is_focused)
+- [x] Fixed: Infinite re-render loops in MainPage.tsx (added useCallback)
+- [x] Fixed: OllamaProvider using wrong API endpoint (changed /api/chat to /api/generate)
+- [x] Fixed: Shortcut "FN" is invalid (changed to CommandOrControl+Shift+Space)
+- [x] Fixed: TypeScript errors (missing demoMode in types, unused imports)
 
-### UI Architecture (Frontend)
-- [ ] **Main Window Layout**:
-  - [ ] Text Editor component (large text area for Bangla).
-  - [ ] Toolbar (Start/Stop Dictation, Cleanup Button, Copy, Clear).
-  - [ ] Status indicators (Provider status, Model status).
-- [ ] **Mini-Screen Overlay (Mictab inspired)**:
-  - [ ] Create a frameless, transparent window in Tauri.
-  - [ ] Implement live Audio Waveform component using Web Audio API analyzer and Framer Motion or Canvas.
-  - [ ] Add functional Stop/Cancel buttons inside the overlay.
-- [ ] **Settings Pages**:
-  - [ ] General Settings (Punctuation mode, Correction strength, Auto-copy).
-  - [ ] Provider Setup (Ollama URL, API Keys for OpenAI/Gemini/OpenRouter).
+## 🟡 High Priority
+- [x] UI redesign - Complete dark theme with violet/amber accents
+- [x] Improved MainPage.tsx UI - modern, animated, playful
+- [x] Improved SettingsPage.tsx UI - dark theme with organized sections
+- [x] Demo mode should be OFF by default and clearly labeled in Settings
+- [x] FN key limitation - documented that it cannot be used as shortcut
 
-### Core Functionality (Backend/Integration)
-- [ ] **Audio Capture**:
-  - [ ] Implement secure microphone access.
-  - [ ] Stream audio data efficiently.
-- [ ] **Speech-to-Text (STT)**:
-  - [ ] Create base `SpeechProvider` interface.
-  - [ ] Implement primary Cloud STT API call (e.g., OpenAI Whisper).
-- [ ] **AI Correction**:
-  - [ ] Create base `AIProvider` interface.
-  - [ ] Implement `OllamaProvider` (connect to local port 11434).
-  - [ ] Build App-managed model pull logic (detect if model exists, trigger download if not).
-  - [ ] Implement Cloud AI fallback providers.
-- [ ] **Secure Storage**:
-  - [ ] Integrate `tauri-plugin-store`.
-  - [ ] Save all API keys and settings securely.
+## 🟢 Completed Features
+- [x] Shortcut key configuration (CommandOrControl+Shift+Space)
+- [x] Recording mode (toggle/hold)
+- [x] STT provider selection (Whisper/Mock)
+- [x] AI provider fallback chain (Ollama → OllamaCloud → OpenAI → Gemini → OpenRouter)
+- [x] Ollama URL configuration (http://localhost:11434)
+- [x] Correction strength settings (minimal/balanced/strong)
+- [x] Punctuation mode settings (off/light/standard/formal)
+- [x] Demo mode toggle in Settings
+- [x] Auto-cleanup option
+- [x] Auto-copy option
+- [x] API keys for all providers
 
-### Refinement & Polish
-- [ ] Ensure clean, modern aesthetics (padding, typography, smooth transitions).
-- [ ] Add comprehensive error handling (e.g., "Ollama not running", "API key invalid").
-- [ ] Write user documentation (`README.md`, `SETUP.md`, `MODEL_GUIDE.md`, `TROUBLESHOOTING.md`).
-- [ ] Perform final cross-platform QA.
+## 🔵 Animation & UX Improvements
+- [x] Animated background gradients (floating, breathing effects)
+- [x] Recording button with pulsing glow ring
+- [x] Animated audio waveform bars in recording banner
+- [x] Staggered page entrance animations
+- [x] Hover effects on all interactive elements (scale, color)
+- [x] Toast notifications with slide animations
+- [x] Copy button with checkmark animation on success
+- [x] Floating animation on empty state icon
+- [x] Smooth page transitions (main ↔ settings)
+- [x] Spring-based easing for natural feel
+
+## 📋 Plan.md
+- [x] Complete specification document created
+- [x] All features documented
+- [x] Implementation status tracked
+- [x] File structure documented
+- [x] Configuration defaults specified
+- [x] Troubleshooting guide added
+
+## 🐛 Known Issues
+- [ ] Microphone permission prompt on macOS - needs testing
+- [ ] System tray behavior when app is closed - needs verification
+- [ ] Settings stored in localStorage (not encrypted) - future improvement
+
+## 🔮 Future Enhancements
+- [ ] tauri-plugin-store for secure storage
+- [ ] Ollama model auto-download UI
+- [ ] Whisper.cpp for local STT
+- [ ] Custom Bangla font selection
+- [ ] History of corrections
+- [ ] Hotkey customization UI

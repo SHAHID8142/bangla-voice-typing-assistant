@@ -21,8 +21,11 @@ export interface CleanupOptions {
   model?: string;
 }
 
+export type STTProviderName = 'Gemma 4 E2B' | 'OpenAI Whisper' | 'Gemini' | 'Mock';
+
 export interface AppSettings {
-  sttProvider: string;
+  uiMode?: 'focus' | 'studio';
+  sttProvider: STTProviderName;
   sttApiKey?: string;
   aiProvider: string; // This will now act as the Primary Provider
   aiModel: string;
@@ -42,4 +45,6 @@ export interface AppSettings {
   correctionStrength: CleanupOptions['correctionStrength'];
   recordingMode: 'toggle' | 'hold';
   shortcutKey: string;
+  demoMode: boolean;
+  lastWorkingOllamaUrl?: string;
 }
